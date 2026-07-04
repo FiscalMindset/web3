@@ -61,6 +61,33 @@ console.log("Tampering detected:", recomputed !== chain[1].hash);
 
 > 💡 **Ask the tutor**: try "why can't I just recompute all the hashes after tampering?" — that question leads straight to proof-of-work.
 
+Prefer Rust? Same chain, same tamper-check, with types (this is the language Solana and most chain cores are built in — Module 4 goes deep):
+
+```rust
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
+
+fn hash_of(index: u64, data: &str, prev: u64) -> u64 {
+    let mut h = DefaultHasher::new();
+    (index, data, prev).hash(&mut h);
+    h.finish()
+}
+
+fn main() {
+    let mut chain = vec![(0u64, String::from("genesis"), 0u64, hash_of(0, "genesis", 0))];
+    for (i, data) in ["alice pays bob 5", "bob pays carol 2"].iter().enumerate() {
+        let prev = chain.last().unwrap().3;
+        let idx = (i + 1) as u64;
+        chain.push((idx, data.to_string(), prev, hash_of(idx, data, prev)));
+    }
+    for b in &chain { println!("#{} {:016x} ← {:016x}", b.0, b.3, b.2); }
+
+    chain[1].1 = "alice pays bob 5000".to_string(); // tamper
+    let valid = chain.windows(2).all(|w| w[1].2 == hash_of(w[0].0, &w[0].1, w[0].2));
+    println!("chain valid after tampering? {}", valid);
+}
+```
+
 ## Why can't attackers just rewrite everything?
 
 Because of **consensus**. Thousands of nodes hold copies of the chain. To rewrite history you'd need to outpace the entire honest network — via hash power (Proof of Work) or staked capital (Proof of Stake). Ethereum moved to Proof of Stake in 2022 ("The Merge"), cutting energy use ~99.95%.
