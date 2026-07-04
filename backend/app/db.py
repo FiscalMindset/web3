@@ -112,6 +112,12 @@ def fallback_memory_add(session_id: str, content: str) -> None:
         )
 
 
+def get_memory_sessions() -> list[str]:
+    with _lock, _conn() as c:
+        rows = c.execute("SELECT DISTINCT session_id FROM memories").fetchall()
+    return [r["session_id"] for r in rows]
+
+
 def get_memories(session_id: str, limit: int = 100) -> list[dict]:
     with _lock, _conn() as c:
         rows = c.execute(

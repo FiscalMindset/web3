@@ -120,10 +120,14 @@ async def chat(body: ChatRequest, background: BackgroundTasks) -> StreamingRespo
 
 # ---------- memory ----------
 
+class ConsolidateRequest(BaseModel):
+    session_id: str | None = None
+
+
 @app.post("/api/memory/consolidate")
-async def consolidate(background: BackgroundTasks) -> dict:
-    background.add_task(memory.consolidate)
-    return {"scheduled": True, **memory.status()}
+async def consolidate(body: ConsolidateRequest, background: BackgroundTasks) -> dict:
+    background.add_task(memory.consolidate, body.session_id)
+    return {"scheduled": True, "session_id": body.session_id, **memory.status()}
 
 
 @app.get("/api/memory/status")

@@ -84,11 +84,19 @@ async def remember(session_id: str, user_msg: str, assistant_msg: str) -> None:
 
 
 async def consolidate(session_id: str | None = None) -> dict:
-    """Run cognify on pending datasets (LLM-heavy; called in background)."""
+    """Run cognify (LLM-heavy; called in background).
+
+    Explicit session_id wins. Otherwise take the pending queue — and since
+    that queue is process-memory (lost on restart/deploy), fall back to every
+    session that has stored notes so consolidation is always possible.
+    """
     if not _cognee_ready:
         return {"ok": False, "reason": "cognee not available"}
     with _cognify_lock:
-        targets = [session_id] if session_id else list(_cognify_pending)
+        if session_id:
+            targets = [session_id]
+        else:
+            targets = list(_cognify_pending) or db.get_memory_sessions()
         for t in targets:
             _cognify_pending.discard(t)
     done = []

@@ -24,9 +24,9 @@ export default function MemoryPanel({ sessionId, lastRecall, refreshKey }) {
     setConsolidating(true);
     setFlash("");
     try {
-      await api("/memory/consolidate", { method: "POST", body: {} });
-      setFlash("cognify scheduled — graph builds in background (uses LLM quota)");
-      setTimeout(refresh, 2500);
+      await api("/memory/consolidate", { method: "POST", body: { session_id: sessionId } });
+      setFlash("cognify running on this session — graph builds in background (uses LLM quota)");
+      setTimeout(refresh, 4000);
     } catch (e) {
       setFlash(`failed: ${e}`);
     } finally {
@@ -43,7 +43,9 @@ export default function MemoryPanel({ sessionId, lastRecall, refreshKey }) {
         <div className="mem-stage">
           <div className="stage-tag">stage 01 · store</div>
           <div className="stage-title">exchange saved</div>
-          <div className="stage-val">{info ? info.count : "…"} notes</div>
+          <div className="stage-val">
+            {info ? `${info.count} note${info.count === 1 ? "" : "s"}` : "…"}
+          </div>
           <div className="stage-sub">SQLite · every turn, always</div>
         </div>
 
