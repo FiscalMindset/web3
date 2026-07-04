@@ -112,6 +112,16 @@ def fallback_memory_add(session_id: str, content: str) -> None:
         )
 
 
+def get_memories(session_id: str, limit: int = 100) -> list[dict]:
+    with _lock, _conn() as c:
+        rows = c.execute(
+            "SELECT content, created_at FROM memories WHERE session_id=? "
+            "ORDER BY id DESC LIMIT ?",
+            (session_id, limit),
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
 def fallback_memory_search(session_id: str, query: str, limit: int = 5) -> list[str]:
     words = [w for w in query.lower().split() if len(w) > 3][:6]
     if not words:

@@ -7,6 +7,7 @@ import { rust } from "@codemirror/lang-rust";
 import { solidity } from "@replit/codemirror-lang-solidity";
 import { tokyoNight } from "@uiw/codemirror-theme-tokyo-night";
 import { api } from "@/lib/api";
+import MemoryPanel from "./MemoryPanel";
 
 function langFor(path) {
   if (path.endsWith(".py")) return [python()];
@@ -23,7 +24,16 @@ const FILE_ICON = (p) =>
   : /\.(js|mjs|ts)$/.test(p) ? "λ"
   : "▤";
 
-export default function Workspace({ sessionId, tree, refreshTree, consoleEntries, pushConsole }) {
+export default function Workspace({
+  sessionId,
+  tree,
+  refreshTree,
+  consoleEntries,
+  pushConsole,
+  lastRecall,
+  memRefreshKey,
+}) {
+  const [tab, setTab] = useState("files"); // files | memory
   const [selected, setSelected] = useState(null);
   const [content, setContent] = useState("");
   const [dirty, setDirty] = useState(false);
@@ -99,14 +109,28 @@ export default function Workspace({ sessionId, tree, refreshTree, consoleEntries
   return (
     <div className="workspace">
       <div className="ws-tabs">
-        <div className="ws-tab active">
+        <button
+          className={`ws-tab ${tab === "files" ? "active" : ""}`}
+          onClick={() => setTab("files")}
+        >
           workspace<span className="count">{files.length}</span>
-        </div>
-        <div style={{ flex: 1 }} />
-        <button className="btn" style={{ margin: 6 }} onClick={refreshTree}>
-          ↻
         </button>
+        <button
+          className={`ws-tab ${tab === "memory" ? "active" : ""}`}
+          onClick={() => setTab("memory")}
+        >
+          memory{lastRecall?.length ? <span className="count">{lastRecall.length}</span> : null}
+        </button>
+        <div style={{ flex: 1 }} />
+        {tab === "files" && (
+          <button className="btn" style={{ margin: 6 }} onClick={refreshTree}>
+            ↻
+          </button>
+        )}
       </div>
+      {tab === "memory" ? (
+        <MemoryPanel sessionId={sessionId} lastRecall={lastRecall} refreshKey={memRefreshKey} />
+      ) : (
       <div className="ws-body">
         {files.length === 0 ? (
           <div className="ws-empty">
@@ -183,6 +207,7 @@ export default function Workspace({ sessionId, tree, refreshTree, consoleEntries
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 }

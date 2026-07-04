@@ -210,7 +210,8 @@ async def run_agent(session_id: str, user_message: str, history: list[dict]):
             "content": "[MEMORY] Relevant notes from this student's past sessions:\n- "
                        + "\n- ".join(recalled),
         })
-        yield {"type": "memory", "data": {"count": len(recalled)}}
+        yield {"type": "memory", "data": {"count": len(recalled),
+                                          "items": [r[:280] for r in recalled]}}
     messages += history
     messages.append({"role": "user", "content": user_message})
 

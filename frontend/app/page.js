@@ -16,6 +16,8 @@ export default function Home() {
   const [tree, setTree] = useState([]);
   const [consoleEntries, setConsoleEntries] = useState([]);
   const [view, setView] = useState("chat"); // narrow screens: learn | chat | workspace
+  const [lastRecall, setLastRecall] = useState(null);
+  const [memRefreshKey, setMemRefreshKey] = useState(0);
   const abortRef = useRef(null);
 
   const pushConsole = useCallback((entry) => {
@@ -73,6 +75,8 @@ export default function Home() {
     setTree([]);
     setConsoleEntries([]);
     setActiveLesson(null);
+    setLastRecall(null);
+    setMemRefreshKey((k) => k + 1);
   };
 
   const send = useCallback(
@@ -108,6 +112,7 @@ export default function Home() {
               patchLast((msg) => ({ ...msg, thinking: (msg.thinking || "") + data.text }));
             } else if (type === "memory") {
               patchLast((msg) => ({ ...msg, memoryCount: data.count }));
+              setLastRecall(data.items || []);
             } else if (type === "tool_call") {
               patchLast((msg) => ({
                 ...msg,
@@ -153,6 +158,7 @@ export default function Home() {
       } finally {
         setStreaming(false);
         abortRef.current = null;
+        setMemRefreshKey((k) => k + 1); // memory panel re-fetches after each turn
       }
     },
     [sessionId, streaming, pushConsole]
@@ -276,6 +282,8 @@ export default function Home() {
           refreshTree={refreshTree}
           consoleEntries={consoleEntries}
           pushConsole={pushConsole}
+          lastRecall={lastRecall}
+          memRefreshKey={memRefreshKey}
         />
       </div>
 

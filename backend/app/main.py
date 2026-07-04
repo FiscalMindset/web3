@@ -131,6 +131,12 @@ async def memory_status() -> dict:
     return memory.status()
 
 
+@app.get("/api/sessions/{session_id}/memory")
+async def session_memory(session_id: str) -> dict:
+    notes = db.get_memories(session_id)
+    return {**memory.status(), "count": len(notes), "notes": notes}
+
+
 # ---------- workspace ----------
 
 @app.get("/api/sessions/{session_id}/files")
