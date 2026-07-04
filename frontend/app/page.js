@@ -5,6 +5,32 @@ import LessonView from "@/components/LessonView";
 import Workspace from "@/components/Workspace";
 import { api, streamChat } from "@/lib/api";
 
+function QuotaChip({ health }) {
+  const [now, setNow] = useState(new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 30_000);
+    return () => clearInterval(t);
+  }, []);
+  if (!health?.ok) {
+    return (
+      <span className="chip main-chip">
+        <span className="dot off" /> backend offline
+      </span>
+    );
+  }
+  // samagama reservation window: 19:00–23:00 IST
+  const istMinutes =
+    (now.getUTCHours() * 60 + now.getUTCMinutes() + 5 * 60 + 30) % (24 * 60);
+  const open = istMinutes >= 19 * 60 && istMinutes < 23 * 60;
+  return (
+    <span className="chip main-chip" title="samagama model reservation: 19:00–23:00 IST">
+      <span className={`dot ${open ? "" : "off"}`} />
+      <b>{health.model}</b>&nbsp;·{" "}
+      {open ? "quota open until 23:00 IST" : "quota closed · opens 19:00 IST"}
+    </span>
+  );
+}
+
 export default function Home() {
   const [sessionId, setSessionId] = useState(null);
   const [health, setHealth] = useState(null);
@@ -141,14 +167,15 @@ export default function Home() {
             } else if (type === "usage") {
               patchLast((msg) => ({ ...msg, meta: data }));
             } else if (type === "error") {
+              const quotaClosed =
+                data.message.includes("No active reservation") || data.message.includes("403");
               patchLast((msg) => ({
                 ...msg,
                 content:
                   msg.content +
-                  `\n\n> ⚠️ **${data.message}**` +
-                  (data.message.includes("40") || data.message.toLowerCase().includes("quota")
-                    ? "\n> (the samagama model quota runs 19:00–23:00 — check the window)"
-                    : ""),
+                  (quotaClosed
+                    ? "\n\n> ⏰ **Model quota is closed right now.** The samagama window is **19:00–23:00 IST** — Sensei can chat again then.\n> Meanwhile: lesson **▶ run** buttons and the workspace editor still work (they don't use the LLM)."
+                    : `\n\n> ⚠️ **${data.message}**`),
               }));
             }
           },
@@ -202,16 +229,7 @@ export default function Home() {
           <span className="sub">web3 tutor workspace</span>
         </div>
         <span className="spacer" />
-        <span className="chip main-chip">
-          <span className={`dot ${health?.ok ? "" : "off"}`} />
-          {health?.ok ? (
-            <>
-              <b>{health.model}</b>&nbsp;· samagama.in · quota 19–23h
-            </>
-          ) : (
-            "backend offline"
-          )}
-        </span>
+        <QuotaChip health={health} />
         <span className="chip">
           memory <b>{health?.memory?.backend || "…"}</b>
         </span>
