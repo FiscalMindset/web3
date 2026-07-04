@@ -9,11 +9,13 @@ streaming every token with model metadata (time to first token, tokens/sec, tool
 ## What it does
 
 - **Agentic chat** — the model has tools: `write_file`, `read_file`, `run_file`, `run_snippet`
-  (Python / JavaScript / TypeScript / Solidity via real `solc`), `list_files`, `delete_file`.
-  Say *"make a mini blockchain in chain.js and run it"* and watch it happen in the workspace panel.
-- **Interactive curriculum** — 6 markdown lessons rendered live: every code block has a
-  **▶ Run** button (executes on the backend), `quiz` blocks become clickable checkpoints,
-  and any block can be sent to the tutor with **✦ ask tutor**.
+  (Python / JavaScript / TypeScript / **Rust** via `rustc` / Solidity via real `solc`),
+  `list_files`, `delete_file`. Say *"make a mini blockchain in chain.rs and run it"* and
+  watch it happen in the workspace panel.
+- **Interactive curriculum** — 9 markdown lessons across 4 modules (Foundations → Smart
+  Contracts → DeFi → **Beyond Ethereum: Rust, Solana, multi-chain**), rendered live: every
+  code block has a **▶ Run** button (executes on the backend), `quiz` blocks become
+  clickable checkpoints, and any block can be sent to the tutor with **✦ ask tutor**.
 - **Live workspace** — file tree, CodeMirror editor (edit + save + run), and an output console
   that captures both your runs and the agent's runs.
 - **Memory layer ([cognee](https://github.com/topoteretes/cognee))** — every exchange is added
@@ -25,12 +27,65 @@ streaming every token with model metadata (time to first token, tokens/sec, tool
 
 ## Architecture
 
+```mermaid
+flowchart LR
+    B["🌐 Browser<br/>Next.js UI"] -->|":80"| C["Caddy<br/>reverse proxy"]
+    C -->|"/api/*<br/>(SSE, no buffering)"| F["FastAPI :8000"]
+    C -->|"/*"| N["Next.js 15 :3000<br/>custom workspace UI"]
+
+    F --> A["Agent loop<br/>tool calling + streaming"]
+    A -->|"chat/completions"| L["samagama.in proxy<br/>MiniMax-M3<br/>⏰ quota 19:00–23:00"]
+    A --> S["Sandbox<br/>per-session workspace"]
+    S --> R1["node"] & R2["python"] & R3["rustc 1.85"] & R4["solc 0.8.26"]
+
+    F --> M["Memory layer"]
+    M --> CG[("cognee<br/>knowledge graph<br/>fastembed local")]
+    M --> SQ[("SQLite<br/>sessions · history<br/>fallback memory")]
+
+    style L fill:#f0b429,color:#14100a
+    style CG fill:#a78bfa,color:#14100a
+    style S fill:#3ecf8e,color:#14100a
 ```
-browser ── Caddy :80 ──┬── /api/* → FastAPI :8000 ── OpenAI-compatible proxy (samagama.in, MiniMax-M3)
-                       │              ├─ sandbox: per-session workspace + subprocess runner (node/python/solc)
-                       │              ├─ cognee memory (fastembed local embeddings)
-                       │              └─ SQLite (sessions, history, fallback memory)
-                       └── /*     → Next.js 15 :3000 (custom UI, SSE streaming client)
+
+### One chat turn, end to end
+
+```mermaid
+sequenceDiagram
+    participant U as Browser
+    participant B as FastAPI agent
+    participant M as cognee memory
+    participant LLM as MiniMax-M3
+    participant SB as Sandbox
+
+    U->>B: POST /api/chat (SSE)
+    B->>M: recall(query)
+    M-->>B: relevant memories
+    B-->>U: event: meta · memory
+    B->>LLM: messages + tools (stream)
+    LLM-->>U: event: think (reasoning)
+    LLM-->>U: event: token (answer text)
+    LLM->>B: tool_call: write_file / run_file
+    B-->>U: event: tool_call
+    B->>SB: execute (rustc / node / python / solc)
+    SB-->>B: stdout · stderr · exit code
+    B-->>U: event: tool_result · files
+    B->>LLM: tool result → continue
+    LLM-->>U: event: token (interprets output)
+    B-->>U: event: usage (tokens · ttft · tok/s)
+    B->>M: remember(exchange)
+```
+
+### Memory pipeline
+
+```mermaid
+flowchart LR
+    E["chat exchange"] --> RAW["SQLite<br/>always stored"]
+    E --> ADD["cognee.add()<br/>per-session dataset"]
+    ADD -.->|"POST /api/memory/consolidate<br/>(LLM-heavy, on demand)"| KG[("knowledge graph<br/>cognify()")]
+    Q["next question"] --> SR["cognee.search(CHUNKS)<br/>fastembed, no LLM cost"]
+    SR -->|"miss / error"| FB["SQLite keyword<br/>fallback"]
+    SR --> CTX["[MEMORY] context<br/>→ system prompt"]
+    FB --> CTX
 ```
 
 ## Run locally
