@@ -1,0 +1,38 @@
+services:
+  backend:
+    build: ./backend
+    env_file: .env
+    environment:
+      - DATA_DIR=/srv/data
+      - WORKSPACES_DIR=/srv/workspaces
+    volumes:
+      - tutor-data:/srv/data
+      - tutor-workspaces:/srv/workspaces
+    restart: unless-stopped
+    mem_limit: 1200m
+
+  frontend:
+    build: ./frontend
+    environment:
+      - BACKEND_URL=http://backend:8000
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+    depends_on:
+      - frontend
+      - backend
+    restart: unless-stopped
+
+volumes:
+  tutor-data:
+  tutor-workspaces:
+  caddy-data:
