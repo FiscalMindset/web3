@@ -1,7 +1,7 @@
 FROM python:3.12-slim
 
 # node (to run student JS) + solc (to compile Solidity)
-RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates gnupg \
+RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates gnupg rustc \
     && curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
     && apt-get install -y --no-install-recommends nodejs \
     && curl -fsSL -o /usr/local/bin/solc \

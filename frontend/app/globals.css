@@ -64,16 +64,66 @@ button {
   min-height: 0;
 }
 
+/* mobile bottom nav — hidden on wide screens */
+.mobile-nav { display: none; }
+
 @media (max-width: 1100px) {
-  .main { grid-template-columns: 220px 1fr; }
-  .workspace { display: none !important; }
-  .main.show-workspace { grid-template-columns: 220px 1fr; }
-  .main.show-workspace .center { display: none; }
-  .main.show-workspace .workspace { display: flex !important; }
-}
-@media (max-width: 720px) {
+  .shell { grid-template-rows: 52px 1fr 56px; }
   .main { grid-template-columns: 1fr; }
-  .rail { display: none; }
+
+  .rail, .center, .workspace { display: none; }
+  .main.view-learn .rail { display: flex; border-right: none; }
+  .main.view-chat .center { display: flex; }
+  .main.view-workspace .workspace { display: flex; border-left: none; }
+
+  .mobile-nav {
+    display: flex;
+    border-top: 1px solid var(--border);
+    background: var(--bg2);
+  }
+  .mobile-nav button {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--faint);
+    border-top: 2px solid transparent;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+  .mobile-nav button.active {
+    color: var(--amber);
+    border-top-color: var(--amber);
+    background: var(--amber-dim);
+  }
+
+  .stream-badge { right: 20px; bottom: 140px; }
+}
+
+@media (max-width: 720px) {
+  .header { gap: 8px; padding: 0 12px; }
+  .brand .sub { display: none; }
+  .chip { display: none; }              /* keep header clean on phones */
+  .chip.main-chip { display: inline-flex; } /* model/status chip stays */
+  .chip b { max-width: 110px; overflow: hidden; text-overflow: ellipsis; }
+
+  .chat-scroll { padding: 16px 14px 8px; }
+  .composer { padding: 10px 12px 12px; }
+  .composer .hint span:last-child { display: none; }
+  .lesson-scroll { padding: 18px 16px 60px; }
+
+  .hero { padding: 20px 0 8px; }
+  .hero h1 { font-size: 23px; }
+  .suggestions { grid-template-columns: 1fr; }
+
+  .md table { display: block; overflow-x: auto; }
+  .codeblock pre { font-size: 11.5px; }
+  .msg-body { font-size: 14px; }
+  .console { height: 160px; }
 }
 
 /* ============ header ============ */

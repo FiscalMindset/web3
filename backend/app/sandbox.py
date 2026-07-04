@@ -30,6 +30,8 @@ LANG_EXT = {
     "typescript": ".ts",
     "solidity": ".sol",
     "sol": ".sol",
+    "rust": ".rs",
+    "rs": ".rs",
 }
 
 
@@ -108,7 +110,16 @@ def _exec(cmd: list[str], cwd: Path) -> dict:
             text=True,
             timeout=RUN_TIMEOUT_SECONDS,
             preexec_fn=_limits,
-            env={"PATH": os.environ.get("PATH", ""), "HOME": str(cwd), "NO_COLOR": "1"},
+            env={
+                "PATH": os.environ.get("PATH", ""),
+                "HOME": str(cwd),
+                "NO_COLOR": "1",
+                # let rustup-shimmed rustc find its toolchain (no-op for plain rustc)
+                "RUSTUP_HOME": os.environ.get(
+                    "RUSTUP_HOME", os.path.expanduser("~/.rustup")
+                ),
+                "RUSTUP_TOOLCHAIN": os.environ.get("RUSTUP_TOOLCHAIN", "stable"),
+            },
         )
         return {
             "ok": proc.returncode == 0,
@@ -129,6 +140,20 @@ def run_file(session_id: str, rel: str) -> dict:
     ext = p.suffix.lower()
     cwd = session_dir(session_id)
 
+    if ext == ".rs":
+        rustc = shutil.which("rustc")
+        if not rustc:
+            return {"ok": False, "exit_code": -1, "stdout": "",
+                    "stderr": "rustc is not installed in this environment yet."}
+        out_dir = cwd / ".bin"
+        out_dir.mkdir(exist_ok=True)
+        binary = out_dir / p.stem
+        compiled = _exec([rustc, "--edition", "2021", "-O", str(p), "-o", str(binary)], cwd)
+        if not compiled["ok"]:
+            compiled["stderr"] = "rustc compile failed:\n" + compiled["stderr"]
+            return compiled
+        return _exec([str(binary)], cwd)
+
     if ext == ".sol":
         solc = shutil.which("solc")
         if not solc:
@@ -140,7 +165,7 @@ def run_file(session_id: str, rel: str) -> dict:
     runner = RUNNERS.get(ext)
     if not runner:
         return {"ok": False, "exit_code": -1, "stdout": "",
-                "stderr": f"Don't know how to run '{ext}' files. Supported: {', '.join(RUNNERS)} + .sol"}
+                "stderr": f"Don't know how to run '{ext}' files. Supported: {', '.join(RUNNERS)} + .sol, .rs"}
     return _exec([*runner, str(p)], cwd)
 
 
@@ -148,7 +173,7 @@ def run_snippet(session_id: str, language: str, code: str) -> dict:
     ext = LANG_EXT.get(language.lower().strip())
     if not ext:
         return {"ok": False, "exit_code": -1, "stdout": "",
-                "stderr": f"Unsupported language '{language}'. Use python, javascript, typescript or solidity."}
+                "stderr": f"Unsupported language '{language}'. Use python, javascript, typescript, rust or solidity."}
     rel = f".snippets/snippet{ext}"
     p = _safe_path(session_id, rel)
     p.parent.mkdir(parents=True, exist_ok=True)

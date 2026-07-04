@@ -29,7 +29,7 @@ You are not a passive explainer — you are hands-on:
 - When a student asks you to CREATE a file, use the write_file tool, then briefly explain it.
 - When a student asks you to RUN something, use run_file / run_snippet and interpret the real output for them.
 - When code errors, read the error, fix the file with write_file, and re-run. Show your debugging thinking.
-- Prefer small runnable examples over long lectures. JavaScript (ethers.js-style patterns, but offline-safe), Python, and Solidity (.sol files compile with solc) all work in the workspace.
+- Prefer small runnable examples over long lectures. JavaScript (ethers.js-style patterns, but offline-safe), Python, Rust (rustc, no external crates) and Solidity (.sol files compile with solc) all work in the workspace.
 - The workspace has NO network access for running code — write self-contained examples (simulate chains/hashes with built-ins like node:crypto or hashlib).
 
 Teaching style:
@@ -98,7 +98,7 @@ TOOLS = [
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "language": {"type": "string", "enum": ["python", "javascript", "typescript", "solidity"]},
+                    "language": {"type": "string", "enum": ["python", "javascript", "typescript", "rust", "solidity"]},
                     "code": {"type": "string"},
                 },
                 "required": ["language", "code"],

@@ -4,8 +4,10 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { api } from "@/lib/api";
 
-const RUNNABLE = new Set(["javascript", "js", "python", "py", "solidity", "sol", "typescript"]);
-const NORMALISE = { js: "javascript", py: "python", sol: "solidity" };
+const RUNNABLE = new Set([
+  "javascript", "js", "python", "py", "solidity", "sol", "typescript", "rust", "rs",
+]);
+const NORMALISE = { js: "javascript", py: "python", sol: "solidity", rs: "rust" };
 
 function Quiz({ spec }) {
   const [picked, setPicked] = useState(null);

@@ -3,19 +3,25 @@ import { useCallback, useEffect, useState } from "react";
 import CodeMirror from "@uiw/react-codemirror";
 import { javascript } from "@codemirror/lang-javascript";
 import { python } from "@codemirror/lang-python";
+import { rust } from "@codemirror/lang-rust";
 import { solidity } from "@replit/codemirror-lang-solidity";
 import { tokyoNight } from "@uiw/codemirror-theme-tokyo-night";
 import { api } from "@/lib/api";
 
 function langFor(path) {
   if (path.endsWith(".py")) return [python()];
+  if (path.endsWith(".rs")) return [rust()];
   if (path.endsWith(".sol")) return [solidity];
   if (/\.(js|mjs|ts|json)$/.test(path)) return [javascript()];
   return [];
 }
 
 const FILE_ICON = (p) =>
-  p.endsWith(".sol") ? "◆" : p.endsWith(".py") ? "𝜋" : /\.(js|mjs|ts)$/.test(p) ? "λ" : "▤";
+  p.endsWith(".sol") ? "◆"
+  : p.endsWith(".py") ? "𝜋"
+  : p.endsWith(".rs") ? "⚙"
+  : /\.(js|mjs|ts)$/.test(p) ? "λ"
+  : "▤";
 
 export default function Workspace({ sessionId, tree, refreshTree, consoleEntries, pushConsole }) {
   const [selected, setSelected] = useState(null);

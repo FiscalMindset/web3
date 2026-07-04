@@ -15,7 +15,7 @@ export default function Home() {
   const [streaming, setStreaming] = useState(false);
   const [tree, setTree] = useState([]);
   const [consoleEntries, setConsoleEntries] = useState([]);
-  const [view, setView] = useState("chat"); // mobile: chat | workspace
+  const [view, setView] = useState("chat"); // narrow screens: learn | chat | workspace
   const abortRef = useRef(null);
 
   const pushConsole = useCallback((entry) => {
@@ -171,6 +171,8 @@ export default function Home() {
   const openLesson = async (slug) => {
     setActiveLesson(slug);
     setLessonBody(null);
+    setView("chat"); // lesson renders in the center pane
+
     try {
       setLessonBody(await api(`/lessons/${slug}`));
     } catch {
@@ -194,7 +196,7 @@ export default function Home() {
           <span className="sub">web3 tutor workspace</span>
         </div>
         <span className="spacer" />
-        <span className="chip">
+        <span className="chip main-chip">
           <span className={`dot ${health?.ok ? "" : "off"}`} />
           {health?.ok ? (
             <>
@@ -212,7 +214,7 @@ export default function Home() {
         </button>
       </header>
 
-      <div className={`main ${view === "workspace" ? "show-workspace" : ""}`}>
+      <div className={`main view-${view}`}>
         <nav className="rail">
           <button
             className={`rail-item ${activeLesson === null ? "active" : ""}`}
@@ -276,6 +278,22 @@ export default function Home() {
           pushConsole={pushConsole}
         />
       </div>
+
+      <nav className="mobile-nav">
+        {[
+          ["learn", "▤", "learn"],
+          ["chat", "◆", "tutor"],
+          ["workspace", "▦", `workspace${tree.filter((t) => t.type === "file").length ? ` · ${tree.filter((t) => t.type === "file").length}` : ""}`],
+        ].map(([key, icon, label]) => (
+          <button
+            key={key}
+            className={view === key ? "active" : ""}
+            onClick={() => setView(key)}
+          >
+            <span>{icon}</span> {label}
+          </button>
+        ))}
+      </nav>
     </div>
   );
 }
